@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Autodiagnóstico Financiero</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom styles for Inter font and general layout */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f4f8; /* Light blue-gray background */
+            display: flex;
+            justify-content: center;
+            align-items: flex-start; /* Align to top for better scrolling on smaller screens */
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            background-color: #ffffff;
+            border-radius: 1.5rem; /* More rounded corners */
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            max-width: 900px; /* Increased max-width for better readability */
+            width: 100%;
+            padding: 2.5rem; /* Increased padding */
+            margin-top: 20px; /* Margin from top */
+        }
+        .section {
+            display: none; /* Hidden by default */
+        }
+        .section.active {
+            display: block; /* Active section is displayed */
+        }
+        .input-group {
+            margin-bottom: 1.5rem; /* Increased margin */
+        }
+        .input-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600; /* Semi-bold labels */
+            color: #334155; /* Darker text for labels */
+        }
+        .input-group input[type="number"],
+        .input-group select {
+            width: 100%;
+            padding: 0.75rem 1rem; /* Increased padding */
+            border: 1px solid #cbd5e1; /* Light gray border */
+            border-radius: 0.5rem; /* Rounded corners for inputs */
+            font-size: 1rem;
+            color: #475569; /* Slightly darker text for input */
+            transition: border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+        }
+        .input-group input[type="number"]:focus,
+        .input-group select:focus {
+            outline: none;
+            border-color: #6366f1; /* Indigo on focus */
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2); /* Light indigo shadow on focus */
+        }
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.75rem; /* More rounded buttons */
+            font-weight: 600;
+            transition: background-color 0.2s ease-in-out, transform 0.1s ease-in-out;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+        .btn-primary {
+            background-color: #4f46e5; /* Indigo */
+            color: #ffffff;
+        }
+        .btn-primary:hover {
+            background-color: #4338ca; /* Darker indigo on hover */
+            transform: translateY(-1px);
+        }
+        .btn-secondary {
+            background-color: #e2e8f0; /* Light gray */
+            color: #475569; /* Darker text */
+            border: 1px solid #cbd5e1;
+        }
+        .btn-secondary:hover {
+            background-color: #cbd5e1; /* Darker gray on hover */
+            transform: translateY(-1px);
+        }
+        .progress-bar-container {
+            width: 100%;
+            background-color: #e2e8f0;
+            border-radius: 0.5rem;
+            height: 12px; /* Slightly thicker progress bar */
+            margin-bottom: 2rem;
+            overflow: hidden;
+        }
+        .progress-bar {
+            height: 100%;
+            width: 0%;
+            background-color: #4f46e5; /* Indigo progress */
+            border-radius: 0.5rem;
+            transition: width 0.4s ease-in-out;
+        }
+        .text-indigo-700 {
+            color: #4338ca; /* Darker indigo for headings */
+        }
+        .text-gray-600 {
+            color: #475569; /* Standard gray for body text */
+        }
+        .result-item {
+            background-color: #f8fafc; /* Very light background for result items */
+            padding: 1rem;
+            border-radius: 0.75rem;
+            margin-bottom: 1rem;
+            border: 1px solid #e2e8f0;
+        }
+        .result-item h3 {
+            font-weight: 700; /* Bold result titles */
+            color: #1e293b; /* Even darker for result titles */
+            margin-bottom: 0.5rem;
+        }
+        .result-item p {
+            color: #475569;
+        }
+        .result-item.positive {
+            border-left: 5px solid #22c55e; /* Green border for positive */
+        }
+        .result-item.neutral {
+            border-left: 5px solid #facc15; /* Yellow border for neutral */
+        }
+        .result-item.negative {
+            border-left: 5px solid #ef4444; /* Red border for negative */
+        }
+        .modal {
+            display: none; /* Hidden by default */
+            position: fixed; /* Stay in place */
+            z-index: 1000; /* Sit on top */
+            left: 0;
+            top: 0;
+            width: 100%; /* Full width */
+            height: 100%; /* Full height */
+            overflow: auto; /* Enable scroll if needed */
+            background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-content {
+            background-color: #fefefe;
+            margin: auto;
+            padding: 2.5rem;
+            border-radius: 1rem;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            max-width: 500px;
+            text-align: center;
+            position: relative;
+        }
+        .modal-close {
+            color: #aaa;
+            position: absolute;
+            top: 1rem;
+            right: 1.5rem;
+            font-size: 2rem;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .modal-close:hover,
+        .modal-close:focus {
+            color: #000;
+            text-decoration: none;
+            cursor: pointer;
+        }
+        /* Custom style for logo */
+        .company-logo {
+            max-width: 300px; /* Adjust as needed, matches placeholder width */
+            height: auto;
+            margin: 0 auto 2rem auto; /* Center and add margin below */
+            display: block; /* Ensures margin auto works */
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Company Logo -->
+        <!-- Si tu logo no está en línea, colócalo en la misma carpeta que este archivo HTML. -->
+        <!-- Por ejemplo, si tu logo se llama 'mi_logo.png', usa src="mi_logo.png" -->
+        <img src="mi_logo.png" alt="Logo de la ONG Tejido Social Colombiano" class="company-logo rounded-lg" onerror="this.onerror=null;this.src='https://placehold.co/300x100/E2E8F0/4F46E5?text=ONG+Tejido+Social+Colombiano&font_size=30';">
+
+        <div class="progress-bar-container">
+            <div id="progressBar" class="progress-bar"></div>
+        </div>
+
+        <!-- Sección 1: Bienvenida -->
+        <div id="section1" class="section active">
+            <h2 class="text-3xl font-bold mb-6 text-indigo-700">Bienvenida a tu Autodiagnóstico Financiero</h2>
+            <p class="text-gray-600 mb-8">Esta herramienta te ayudará a evaluar tu situación económica de forma sencilla y a identificar áreas de mejora. Responde honestamente para obtener el diagnóstico más preciso.</p>
+            <div class="flex justify-end">
+                <button onclick="nextSection()" class="btn btn-primary">Comenzar <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg></button>
+            </div>
+        </div>
+
+        <!-- Sección 2: Ingresos -->
+        <div id="section2" class="section">
+            <h2 class="text-3xl font-bold mb-6 text-indigo-700">1. Tus Ingresos</h2>
+            <p class="text-gray-600 mb-8">Comencemos por entender tus fuentes de dinero. Por favor, ingresa tus ingresos mensuales aproximados.</p>
+
+            <div class="input-group">
+                <label for="ingresoPrincipal">Ingreso principal (Salario, negocio, etc.)</label>
+                <input type="number" id="ingresoPrincipal" placeholder="Ej. 500" min="0">
+            </div>
+            <div class="input-group">
+                <label for="otrosIngresos">Otros ingresos (Ayudas, remesas, trabajos extra)</label>
+                <input type="number" id="otrosIngresos" placeholder="Ej. 100" min="0">
+            </div>
+
+            <div class="flex justify-between mt-8">
+                <button onclick="prevSection()" class="btn btn-secondary"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg> Anterior</button>
+                <button onclick="nextSection()" class="btn btn-primary">Siguiente <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg></button>
+            </div>
+        </div>
+
+        <!-- Sección 3: Gastos Fijos -->
+        <div id="section3" class="section">
+            <h2 class="text-3xl font-bold mb-6 text-indigo-700">2. Tus Gastos Fijos</h2>
+            <p class="text-gray-600 mb-8">Ahora, pensemos en los gastos que tienes cada mes y que no varían mucho.</p>
+
+            <div class="input-group">
+                <label for="vivienda">Vivienda (Alquiler/hipoteca, servicios básicos)</label>
+                <input type="number" id="vivienda" placeholder="Ej. 200" min="0">
+            </div>
+            <div class="input-group">
+                <label for="transporteFijo">Transporte (Cuotas de bus, tren, etc.)</label>
+                <input type="number" id="transporteFijo" placeholder="Ej. 30" min="0">
+            </div>
+            <div class="input-group">
+                <label for="educacionFija">Educación (Matrículas, cuotas fijas)</label>
+                <input type="number" id="educacionFija" placeholder="Ej. 50" min="0">
+            </div>
+            <div class="input-group">
+                <label for="saludFija">Salud (Seguros, medicamentos crónicos)</label>
+                <input type="number" id="saludFija" placeholder="Ej. 20" min="0">
+            </div>
+            <div class="input-group">
+                <label for="otrosFijos">Otros gastos fijos (Internet, teléfono, etc.)</label>
+                <input type="number" id="otrosFijos" placeholder="Ej. 40" min="0">
+            </div>
+
+            <div class="flex justify-between mt-8">
+                <button onclick="prevSection()" class="btn btn-secondary"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg> Anterior</button>
+                <button onclick="nextSection()" class="btn btn-primary">Siguiente <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg></button>
+            </div>
+        </div>
+
+        <!-- Sección 4: Gastos Variables -->
+        <div id="section4" class="section">
+            <h2 class="text-3xl font-bold mb-6 text-indigo-700">3. Tus Gastos Variables</h2>
+            <p class="text-gray-600 mb-8">Estos son los gastos que pueden cambiar cada mes.</p>
+
+            <div class="input-group">
+                <label for="alimentacion">Alimentación (Mercado, comida fuera)</label>
+                <input type="number" id="alimentacion" placeholder="Ej. 150" min="0">
+            </div>
+            <div class="input-group">
+                <label for="transporteVariable">Transporte (Taxis, viajes ocasionales)</label>
+                <input type="number" id="transporteVariable" placeholder="Ej. 10" min="0">
+            </div>
+            <div class="input-group">
+                <label for="ocio">Ocio y entretenimiento</label>
+                <input type="number" id="ocio" placeholder="Ej. 20" min="0">
+            </div>
+            <div class="input-group">
+                <label for="vestimenta">Vestimenta y cuidado personal</label>
+                <input type="number" id="vestimenta" placeholder="Ej. 15" min="0">
+            </div>
+            <div class="input-group">
+                <label for="otrosVariables">Otros gastos variables</label>
+                <input type="number" id="otrosVariables" placeholder="Ej. 25" min="0">
+            </div>
+
+            <div class="flex justify-between mt-8">
+                <button onclick="prevSection()" class="btn btn-secondary"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg> Anterior</button>
+                <button onclick="nextSection()" class="btn btn-primary">Siguiente <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg></button>
+            </div>
+        </div>
+
+        <!-- Sección 5: Deudas -->
+        <div id="section5" class="section">
+            <h2 class="text-3xl font-bold mb-6 text-indigo-700">4. Tus Deudas</h2>
+            <p class="text-gray-600 mb-8">Es importante conocer tus compromisos de pago.</p>
+
+            <div class="input-group">
+                <label for="cuotasCredito">Cuotas mensuales de tarjetas de crédito</label>
+                <input type="number" id="cuotasCredito" placeholder="Ej. 50" min="0">
+            </div>
+            <div class="input-group">
+                <label for="cuotasPrestamos">Cuotas mensuales de préstamos (personales, microcréditos)</label>
+                <input type="number" id="cuotasPrestamos" placeholder="Ej. 70" min="0">
+            </div>
+            <div class="input-group">
+                <label for="deudasInformales">Pagos mensuales a deudas informales</label>
+                <input type="number" id="deudasInformales" placeholder="Ej. 30" min="0">
+            </div>
+
+            <div class="flex justify-between mt-8">
+                <button onclick="prevSection()" class="btn btn-secondary"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg> Anterior</button>
+                <button onclick="nextSection()" class="btn btn-primary">Siguiente <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg></button>
+            </div>
+        </div>
+
+        <!-- Sección 6: Ahorro y Metas -->
+        <div id="section6" class="section">
+            <h2 class="text-3xl font-bold mb-6 text-indigo-700">5. Ahorro y Metas</h2>
+            <p class="text-gray-600 mb-8">¿Estás ahorrando? ¿Para qué?</p>
+
+            <div class="input-group">
+                <label for="ahorroMensual">¿Cuánto ahorras mensualmente?</label>
+                <input type="number" id="ahorroMensual" placeholder="Ej. 20" min="0">
+            </div>
+            <div class="input-group">
+                <label for="fondoEmergencia">¿Tienes un fondo de emergencia (dinero para imprevistos)?</label>
+                <select id="fondoEmergencia">
+                    <option value="no">No</option>
+                    <option value="poco">Sí, pero es poco</option>
+                    <option value="suficiente">Sí, es suficiente (al menos 3 meses de gastos)</option>
+                </select>
+            </div>
+            <div class="input-group">
+                <label for="metasFinancieras">¿Tienes metas financieras claras?</label>
+                <select id="metasFinancieras">
+                    <option value="no">No</option>
+                    <option value="algunas">Sí, algunas</option>
+                    <option value="claras">Sí, muy claras y definidas</option>
+                </select>
+            </div>
+
+            <div class="flex justify-between mt-8">
+                <button onclick="prevSection()" class="btn btn-secondary"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg> Anterior</button>
+                <button onclick="calculateAndDisplayResults()" class="btn btn-primary">Ver Resultados <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"></path></svg></button>
+            </div>
+        </div>
+
+        <!-- Sección 7: Resultados -->
+        <div id="section7" class="section">
+            <h2 class="text-3xl font-bold mb-6 text-indigo-700">Tu Diagnóstico Financiero</h2>
+            <p class="text-gray-600 mb-8">Aquí tienes un resumen de tu situación financiera y algunas recomendaciones personalizadas.</p>
+
+            <div id="resultsSummary" class="space-y-4 mb-8">
+                <!-- Results will be injected here by JavaScript -->
+            </div>
+
+            <div class="flex justify-center mt-8">
+                <button onclick="resetTool()" class="btn btn-primary">Reiniciar Autodiagnóstico</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Custom Modal for Alerts -->
+    <div id="customModal" class="modal">
+        <div class="modal-content">
+            <span class="modal-close" onclick="closeModal()">&times;</span>
+            <h3 id="modalTitle" class="text-2xl font-bold mb-4 text-indigo-700"></h3>
+            <p id="modalMessage" class="text-gray-600 mb-6"></p>
+            <button onclick="closeModal()" class="btn btn-primary">Entendido</button>
+        </div>
+    </div>
+
+    <script>
+        let currentSection = 1;
+        const totalSections = 7; // Total number of sections, including welcome and results
+        const sections = document.querySelectorAll('.section');
+        const progressBar = document.getElementById('progressBar');
+        let userData = {}; // Object to store user's input
+
+        // Function to show custom modal instead of alert/confirm
+        function showCustomModal(title, message) {
+            document.getElementById('modalTitle').innerText = title;
+            document.getElementById('modalMessage').innerText = message;
+            document.getElementById('customModal').style.display = 'flex';
+        }
+
+        function closeModal() {
+            document.getElementById('customModal').style.display = 'none';
+        }
+
+        // Initialize the tool by showing the first section and updating progress bar
+        function initializeTool() {
+            showSection(currentSection);
+            updateProgressBar();
+        }
+
+        // Function to update the progress bar
+        function updateProgressBar() {
+            // Calculate progress based on sections that require user input (excluding welcome and results)
+            const progress = ((currentSection - 1) / (totalSections - 2)) * 100;
+            progressBar.style.width = `${Math.min(100, Math.max(0, progress))}%`; // Ensure progress is between 0 and 100
+        }
+
+        // Function to show a specific section
+        function showSection(sectionNumber) {
+            sections.forEach((section, index) => {
+                if (index + 1 === sectionNumber) {
+                    section.classList.add('active');
+                } else {
+                    section.classList.remove('active');
+                }
+            });
+            updateProgressBar();
+        }
+
+        // Function to collect data from the current section before moving to the next
+        function collectData() {
+            switch (currentSection) {
+                case 2: // Ingresos
+                    userData.ingresoPrincipal = parseFloat(document.getElementById('ingresoPrincipal').value) || 0;
+                    userData.otrosIngresos = parseFloat(document.getElementById('otrosIngresos').value) || 0;
+                    break;
+                case 3: // Gastos Fijos
+                    userData.vivienda = parseFloat(document.getElementById('vivienda').value) || 0;
+                    userData.transporteFijo = parseFloat(document.getElementById('transporteFijo').value) || 0;
+                    userData.educacionFija = parseFloat(document.getElementById('educacionFija').value) || 0;
+                    userData.saludFija = parseFloat(document.getElementById('saludFija').value) || 0;
+                    userData.otrosFijos = parseFloat(document.getElementById('otrosFijos').value) || 0;
+                    break;
+                case 4: // Gastos Variables
+                    userData.alimentacion = parseFloat(document.getElementById('alimentacion').value) || 0;
+                    userData.transporteVariable = parseFloat(document.getElementById('transporteVariable').value) || 0;
+                    userData.ocio = parseFloat(document.getElementById('ocio').value) || 0;
+                    userData.vestimenta = parseFloat(document.getElementById('vestimenta').value) || 0;
+                    userData.otrosVariables = parseFloat(document.getElementById('otrosVariables').value) || 0;
+                    break;
+                case 5: // Deudas
+                    userData.cuotasCredito = parseFloat(document.getElementById('cuotasCredito').value) || 0;
+                    userData.cuotasPrestamos = parseFloat(document.getElementById('cuotasPrestamos').value) || 0;
+                    userData.deudasInformales = parseFloat(document.getElementById('deudasInformales').value) || 0;
+                    break;
+                case 6: // Ahorro y Metas
+                    userData.ahorroMensual = parseFloat(document.getElementById('ahorroMensual').value) || 0;
+                    userData.fondoEmergencia = document.getElementById('fondoEmergencia').value;
+                    userData.metasFinancieras = document.getElementById('metasFinancieras').value;
+                    break;
+            }
+        }
+
+        // Function to navigate to the next section
+        function nextSection() {
+            // Validate input before moving to the next section for input sections
+            if (currentSection >= 2 && currentSection <= 6) {
+                const inputs = sections[currentSection - 1].querySelectorAll('input[type="number"]');
+                let allInputsValid = true;
+                inputs.forEach(input => {
+                    // Check if input is empty or negative
+                    if (input.value === '' || parseFloat(input.value) < 0) {
+                        allInputsValid = false;
+                        input.style.borderColor = '#ef4444'; // Highlight invalid input in red
+                    } else {
+                        input.style.borderColor = '#cbd5e1'; // Reset border color
+                    }
+                });
+
+                if (!allInputsValid) {
+                    showCustomModal('Datos Incompletos', 'Por favor, completa todos los campos numéricos o asegúrate de que no sean negativos.');
+                    return; // Stop navigation if validation fails
+                }
+            }
+
+            collectData(); // Collect data from the current section
+            if (currentSection < totalSections) {
+                currentSection++;
+                showSection(currentSection);
+            }
+        }
+
+        // Function to navigate to the previous section
+        function prevSection() {
+            if (currentSection > 1) {
+                currentSection--;
+                showSection(currentSection);
+            }
+        }
+
+        // Function to calculate results and display them
+        function calculateAndDisplayResults() {
+            collectData(); // Ensure all data from the last section is collected
+
+            const totalIngresos = userData.ingresoPrincipal + userData.otrosIngresos;
+            const totalGastosFijos = userData.vivienda + userData.transporteFijo + userData.educacionFija + userData.saludFija + userData.otrosFijos;
+            const totalGastosVariables = userData.alimentacion + userData.transporteVariable + userData.ocio + userData.vestimenta + userData.otrosVariables;
+            const totalGastos = totalGastosFijos + totalGastosVariables;
+            const totalDeudas = userData.cuotasCredito + userData.cuotasPrestamos + userData.deudasInformales;
+            const flujoEfectivo = totalIngresos - totalGastos - totalDeudas;
+
+            const resultsSummary = document.getElementById('resultsSummary');
+            resultsSummary.innerHTML = ''; // Clear previous results
+
+            // Helper function to add a result item
+            function addResultItem(title, message, type) {
+                const item = document.createElement('div');
+                item.classList.add('result-item', type);
+                item.innerHTML = `<h3>${title}</h3><p>${message}</p>`;
+                resultsSummary.appendChild(item);
+            }
+
+            // --- Diagnóstico y Recomendaciones ---
+
+            // 1. Flujo de Efectivo
+            if (flujoEfectivo > 0) {
+                addResultItem(
+                    'Flujo de Efectivo Mensual',
+                    `¡Tienes un excedente de $${flujoEfectivo.toFixed(2)} al mes! Esto es una señal positiva.`,
+                    'positive'
+                );
+            } else if (flujoEfectivo < 0) {
+                addResultItem(
+                    'Flujo de Efectivo Mensual',
+                    `Tienes un déficit de $${Math.abs(flujoEfectivo).toFixed(2)} al mes. Esto significa que estás gastando más de lo que ingresas. Es crucial revisar tus gastos.`,
+                    'negative'
+                );
+            } else {
+                addResultItem(
+                    'Flujo de Efectivo Mensual',
+                    `Tus ingresos y gastos están equilibrados. Es un buen punto de partida, pero busca un pequeño excedente para ahorrar.`,
+                    'neutral'
+                );
+            }
+
+            // 2. Gestión de Gastos
+            const porcentajeGastos = totalIngresos > 0 ? ((totalGastos / totalIngresos) * 100).toFixed(2) : 0;
+            if (porcentajeGastos > 80) {
+                addResultItem(
+                    'Gestión de Gastos',
+                    `Tus gastos representan el ${porcentajeGastos}% de tus ingresos. Esto es un porcentaje alto. Te recomendamos identificar gastos no esenciales para reducir y liberar dinero.`,
+                    'negative'
+                );
+            } else if (porcentajeGastos > 60) {
+                addResultItem(
+                    'Gestión de Gastos',
+                    `Tus gastos representan el ${porcentajeGastos}% de tus ingresos. Es un buen nivel, pero siempre hay espacio para optimizar.`,
+                    'neutral'
+                );
+            } else {
+                addResultItem(
+                    'Gestión de Gastos',
+                    `Tus gastos son el ${porcentajeGastos}% de tus ingresos. ¡Excelente control de gastos!`,
+                    'positive'
+                );
+            }
+
+            // 3. Nivel de Endeudamiento
+            const porcentajeDeudaIngreso = totalIngresos > 0 ? ((totalDeudas / totalIngresos) * 100).toFixed(2) : 0;
+            if (totalDeudas > 0 && porcentajeDeudaIngreso > 30) {
+                addResultItem(
+                    'Nivel de Endeudamiento',
+                    `Tus pagos de deuda representan el ${porcentajeDeudaIngreso}% de tus ingresos. Este es un nivel alto. Considera buscar asesoría para reestructurar tus deudas o priorizar el pago de las más costosas.`,
+                    'negative'
+                );
+            } else if (totalDeudas > 0 && porcentajeDeudaIngreso > 15) {
+                addResultItem(
+                    'Nivel de Endeudamiento',
+                    `Tus pagos de deuda representan el ${porcentajeDeudaIngreso}% de tus ingresos. Es manejable, pero ten cuidado de no endeudarte más.`,
+                    'neutral'
+                );
+            } else {
+                addResultItem(
+                    'Nivel de Endeudamiento',
+                    `Tus pagos de deuda son bajos o inexistentes. ¡Felicidades por tu buena gestión!`,
+                    'positive'
+                );
+            }
+
+            // 4. Ahorro y Fondo de Emergencia
+            if (userData.ahorroMensual > 0 && userData.fondoEmergencia === 'suficiente') {
+                addResultItem(
+                    'Ahorro y Fondo de Emergencia',
+                    `Estás ahorrando consistentemente y tienes un fondo de emergencia sólido. ¡Vas por muy buen camino!`,
+                    'positive'
+                );
+            } else if (userData.ahorroMensual > 0 && userData.fondoEmergencia === 'poco') {
+                addResultItem(
+                    'Ahorro y Fondo de Emergencia',
+                    `Estás ahorrando, lo cual es genial, pero tu fondo de emergencia es limitado. Prioriza construirlo para tener mayor tranquilidad.`,
+                    'neutral'
+                );
+            } else if (userData.ahorroMensual === 0 && userData.fondoEmergencia === 'no') {
+                addResultItem(
+                    'Ahorro y Fondo de Emergencia',
+                    `Actualmente no estás ahorrando y no tienes un fondo de emergencia. Es vital empezar a construir uno, aunque sea con pequeñas cantidades, para protegerte de imprevistos.`,
+                    'negative'
+                );
+            } else {
+                addResultItem(
+                    'Ahorro y Fondo de Emergencia',
+                    `Considera iniciar un hábito de ahorro, incluso con pequeñas cantidades, para construir un fondo de emergencia.`,
+                    'neutral'
+                );
+            }
+
+            // 5. Metas Financieras
+            if (userData.metasFinancieras === 'claras') {
+                addResultItem(
+                    'Metas Financieras',
+                    `Tienes metas financieras muy claras. Esto te ayudará a mantenerte enfocada y motivada. ¡Sigue así!`,
+                    'positive'
+                );
+            } else if (userData.metasFinancieras === 'algunas') {
+                addResultItem(
+                    'Metas Financieras',
+                    `Tienes algunas metas, pero definirlas con más detalle te dará mayor dirección y control.`,
+                    'neutral'
+                );
+            } else {
+                addResultItem(
+                    'Metas Financieras',
+                    `No tienes metas financieras claras. Definir qué quieres lograr con tu dinero es el primer paso para tomar el control de tus finanzas.`,
+                    'negative'
+                );
+            }
+
+            // General Recommendation
+            addResultItem(
+                'Próximos Pasos',
+                `Te animamos a revisar estas recomendaciones y empezar con un pequeño cambio. Cada paso cuenta en tu camino hacia la estabilidad financiera.`,
+                'neutral'
+            );
+
+            showSection(totalSections); // Show the results section
+        }
+
+        // Function to reset the tool
+        function resetTool() {
+            currentSection = 1;
+            userData = {}; // Clear all stored data
+            // Reset all input fields
+            document.querySelectorAll('input[type="number"]').forEach(input => {
+                input.value = '';
+                input.style.borderColor = '#cbd5e1'; // Reset border color
+            });
+            document.querySelectorAll('select').forEach(select => {
+                select.value = select.options[0].value; // Reset select to first option
+            });
+            document.getElementById('resultsSummary').innerHTML = ''; // Clear results
+            showSection(currentSection);
+        }
+
+        // Initialize the tool when the window loads
+        window.onload = initializeTool;
+
+    </script>
+</body>
+</html>
